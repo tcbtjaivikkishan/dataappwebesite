@@ -23,6 +23,26 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
   let user: any;
   try {
     user = await db.collection("users").findOne({ _id: new ObjectId(id) });
+    if (!user) {
+      const ru = await db.collection("registered_users").findOne({ _id: new ObjectId(id) });
+      if (ru) {
+        user = {
+          _id: ru._id,
+          name: ru.fullName,
+          mobile_number: ru.phoneNumber,
+          created_at: ru.submittedAt,
+          state: ru.state,
+          is_active: true,
+          addresses: ru.state ? [{
+            line1: "Registered via Website",
+            state: ru.state,
+            city: "—",
+            pincode: "—",
+          }] : [],
+          source: "registered",
+        };
+      }
+    }
   } catch {
     return (
       <div>
@@ -67,6 +87,11 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
         .slice(0, 2)
     : "?";
 
+  const contactedDoc = await db.collection("user_is_conttacted").findOne({
+    $or: [{ userId: id }, { userid: id }],
+  });
+  const isContacted = Boolean(contactedDoc?.isContacted ?? contactedDoc?.iscontacted ?? false);
+
   return (
     <>
       <Link href="/users" className="back-link">← Back to Users</Link>
@@ -81,7 +106,17 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
             {user.email ? ` · ${user.email}` : ""}
           </p>
         </div>
-        <div style={{ marginLeft: "auto", display: "flex", gap: 8 }}>
+        <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
+          {isContacted ? (
+            <span
+              className="badge verified"
+              title={`Contacted${contactedDoc?.contactedBy ? ` by ${contactedDoc.contactedBy}` : ""}${contactedDoc?.updatedAt ? ` on ${new Date(contactedDoc.updatedAt).toLocaleDateString()}` : ""}`}
+            >
+              ✓ Contacted {contactedDoc?.contactedBy ? `(${contactedDoc.contactedBy})` : ""}
+            </span>
+          ) : (
+            <span className="badge not-synced">⏳ Not Contacted</span>
+          )}
           {user.name ? (
             <span className="badge verified">● Verified</span>
           ) : (

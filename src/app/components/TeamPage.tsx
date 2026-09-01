@@ -1,7 +1,6 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import Link from "next/link";
 import { useEffect, useState, useCallback, Suspense } from "react";
 
 interface UserRow {
@@ -10,24 +9,36 @@ interface UserRow {
   mobile_number: string;
   email?: string;
   zoho_contact_id?: string;
-  last_login_at?: string;
-  created_at?: string;
+  last_login_at?: string | null;
+  created_at?: string | null;
   is_active?: boolean;
   orderCount?: number;
   source?: "app" | "registered";
   state?: string;
-  assignee?: "shivani" | "ritika" | "siksha";
   isContacted?: boolean;
   contactedBy?: string;
   contactedAt?: string;
 }
 
-function UsersContent() {
+interface TeamStats {
+  total: number;
+  contacted: number;
+  byAssignee: Record<string, { total: number; contacted: number }>;
+}
+
+const TEAM_COLORS: Record<string, string> = {
+  shivani: "#e056a0",
+  ritika: "#56b4e0",
+  siksha: "#56e0a0",
+};
+
+function TeamContent({ assignee }: { assignee: string }) {
   const router = useRouter();
   const searchParams = useSearchParams();
 
   const [users, setUsers] = useState<UserRow[]>([]);
   const [total, setTotal] = useState(0);
+  const [stats, setStats] = useState<TeamStats | null>(null);
   const [loading, setLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
 
@@ -38,21 +49,31 @@ function UsersContent() {
   const fetchUsers = useCallback(async () => {
     setLoading(true);
     try {
-      const params = new URLSearchParams({ page: String(page), filter, q: search });
+      const params = new URLSearchParams({
+        page: String(page),
+        filter,
+        q: search,
+        assignee,
+      });
       const res = await fetch(`/api/users?${params}`);
       const data = await res.json();
       setUsers(data.users);
       setTotal(data.total);
+      if (data.stats) {
+        setStats(data.stats);
+      }
     } catch (err) {
       console.error("Failed to fetch users:", err);
     } finally {
       setLoading(false);
     }
-  }, [page, filter, search]);
+  }, [page, filter, search, assignee]);
 
   useEffect(() => {
     fetchUsers();
   }, [fetchUsers]);
+
+  const basePath = `/${assignee}`;
 
   const updateParams = (updates: Record<string, string>) => {
     const params = new URLSearchParams(searchParams.toString());
@@ -61,16 +82,35 @@ function UsersContent() {
       else params.delete(k);
     }
     if (updates.filter || updates.q) params.set("page", "1");
-    router.push(`/users?${params}`);
+    router.push(`${basePath}?${params}`);
   };
 
   const toggleContacted = async (user: UserRow, e: React.MouseEvent) => {
-    e.stopPropagation();
+    e.stopPropagation(); // Don't navigate to user detail
     const newStatus = !user.isContacted;
 
+    // Optimistic UI update
     setUsers((prev) =>
       prev.map((u) => (u._id === user._id ? { ...u, isContacted: newStatus } : u))
     );
+
+    // Also update local stats
+    setStats((prev) => {
+      if (!prev) return prev;
+      const currentAssigneeStats = prev.byAssignee[assignee] || { total: 0, contacted: 0 };
+      const diff = newStatus ? 1 : -1;
+      return {
+        ...prev,
+        contacted: prev.contacted + diff,
+        byAssignee: {
+          ...prev.byAssignee,
+          [assignee]: {
+            ...currentAssigneeStats,
+            contacted: Math.max(0, currentAssigneeStats.contacted + diff),
+          },
+        },
+      };
+    });
 
     try {
       setUpdatingId(user._id);
@@ -80,14 +120,16 @@ function UsersContent() {
         body: JSON.stringify({
           userId: user._id,
           isContacted: newStatus,
-          assignee: user.assignee,
+          assignee,
         }),
       });
+
       if (!res.ok) {
-        throw new Error("Failed to update contacted status");
+        throw new Error("Failed to save contacted status");
       }
     } catch (err) {
       console.error("Failed to toggle contacted status:", err);
+      // Revert on error
       setUsers((prev) =>
         prev.map((u) => (u._id === user._id ? { ...u, isContacted: !newStatus } : u))
       );
@@ -114,11 +156,65 @@ function UsersContent() {
     return d.toLocaleDateString("en-IN", { day: "numeric", month: "short" });
   };
 
+  const displayName = assignee.charAt(0).toUpperCase() + assignee.slice(1);
+  const accentColor = TEAM_COLORS[assignee] || "#6c5ce7";
+
+  const memberStats = stats?.byAssignee[assignee] || { total: 0, contacted: 0 };
+  const contactedCount = memberStats.contacted;
+  const assignedTotal = memberStats.total || total;
+  const pendingCount = Math.max(0, assignedTotal - contactedCount);
+  const progressPct = assignedTotal > 0 ? Math.round((contactedCount / assignedTotal) * 100) : 0;
+
   return (
     <>
       <div className="page-header">
-        <h1 className="page-title">Users</h1>
-        <p className="page-subtitle">{total.toLocaleString()} total users in database</p>
+        <h1 className="page-title" style={{ display: "flex", alignItems: "center", gap: 10 }}>
+          <span
+            style={{
+              width: 14,
+              height: 14,
+              borderRadius: "50%",
+              background: accentColor,
+              display: "inline-block",
+              boxShadow: `0 0 10px ${accentColor}80`,
+            }}
+          />
+          {displayName}&apos;s Users
+        </h1>
+        <p className="page-subtitle">
+          {assignedTotal.toLocaleString()} total users assigned to {displayName}
+        </p>
+      </div>
+
+      {/* ── Progress & Contact Summary Card ──────────────── */}
+      <div className="progress-card">
+        <div className="progress-header">
+          <div>
+            <span style={{ fontSize: 13, fontWeight: 700, color: "var(--text-primary)" }}>
+              Contact Progress
+            </span>
+            <span style={{ marginLeft: 8, fontSize: 12, color: "var(--text-secondary)" }}>
+              {contactedCount} of {assignedTotal} contacted ({progressPct}%)
+            </span>
+          </div>
+          <div style={{ display: "flex", gap: 16, fontSize: 12 }}>
+            <span style={{ color: "var(--green-text)", fontWeight: 600 }}>
+              ✅ {contactedCount} Contacted
+            </span>
+            <span style={{ color: "var(--amber)", fontWeight: 600 }}>
+              ⏳ {pendingCount} Pending
+            </span>
+          </div>
+        </div>
+        <div className="progress-track">
+          <div
+            className="progress-fill"
+            style={{
+              width: `${progressPct}%`,
+              background: `linear-gradient(90deg, ${accentColor}, var(--green))`,
+            }}
+          />
+        </div>
       </div>
 
       {/* ── Toolbar ──────────────────────────────────────── */}
@@ -174,9 +270,8 @@ function UsersContent() {
                   <th>Name</th>
                   <th>Phone</th>
                   <th>Email</th>
-                  <th>Contact</th>
+                  <th>Contact Status</th>
                   <th>Source</th>
-                  <th>Assigned</th>
                   <th>Status</th>
                   <th>Orders</th>
                   <th>Zoho</th>
@@ -187,7 +282,7 @@ function UsersContent() {
               <tbody>
                 {users.length === 0 ? (
                   <tr>
-                    <td colSpan={11}>
+                    <td colSpan={10}>
                       <div className="empty-state">
                         <div className="empty-state-icon">🔍</div>
                         <div className="empty-state-text">No users found</div>
@@ -234,20 +329,6 @@ function UsersContent() {
                           </span>
                         ) : (
                           <span className="badge app-source">📱 App</span>
-                        )}
-                      </td>
-                      <td>
-                        {u.assignee ? (
-                          <Link
-                            href={`/${u.assignee}`}
-                            onClick={(e) => e.stopPropagation()}
-                            className={`badge team-${u.assignee}`}
-                            style={{ textDecoration: "none" }}
-                          >
-                            {u.assignee.charAt(0).toUpperCase() + u.assignee.slice(1)}
-                          </Link>
-                        ) : (
-                          <span style={{ color: "var(--text-muted)" }}>—</span>
                         )}
                       </td>
                       <td>
@@ -306,10 +387,10 @@ function UsersContent() {
   );
 }
 
-export default function UsersPage() {
+export default function TeamPage({ assignee }: { assignee: string }) {
   return (
     <Suspense fallback={<div className="loading-container"><div className="loading-spinner" /></div>}>
-      <UsersContent />
+      <TeamContent assignee={assignee} />
     </Suspense>
   );
 }
