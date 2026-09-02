@@ -2,6 +2,7 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useCallback, Suspense } from "react";
+import CopyablePhone from "@/app/components/CopyablePhone";
 
 interface UserRow {
   _id: string;
@@ -299,7 +300,9 @@ function TeamContent({ assignee }: { assignee: string }) {
                       <td style={{ fontWeight: 600 }}>
                         {u.name || <span style={{ color: "var(--text-muted)" }}>—</span>}
                       </td>
-                      <td className="phone-text">{u.mobile_number}</td>
+                      <td className="phone-text">
+                        <CopyablePhone phone={u.mobile_number} />
+                      </td>
                       <td>{u.email || <span style={{ color: "var(--text-muted)" }}>—</span>}</td>
                       <td>
                         <button

@@ -1,6 +1,7 @@
 import { getDb } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 import Link from "next/link";
+import CopyablePhone from "@/app/components/CopyablePhone";
 
 export const dynamic = "force-dynamic";
 
@@ -101,10 +102,10 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
         <div className="user-avatar">{initials}</div>
         <div className="user-hero-info">
           <h1>{user.name || "Unnamed User"}</h1>
-          <p>
-            {user.mobile_number}
-            {user.email ? ` · ${user.email}` : ""}
-          </p>
+          <div style={{ display: "flex", alignItems: "center", gap: 10, marginTop: 4 }}>
+            <CopyablePhone phone={user.mobile_number} />
+            {user.email ? <span style={{ color: "var(--text-secondary)" }}>· {user.email}</span> : null}
+          </div>
         </div>
         <div style={{ marginLeft: "auto", display: "flex", gap: 8, alignItems: "center" }}>
           {isContacted ? (
@@ -141,7 +142,9 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
           </div>
           <div className="detail-row">
             <span className="detail-label">Phone</span>
-            <span className="detail-value mono">{user.mobile_number}</span>
+            <span className="detail-value mono">
+              <CopyablePhone phone={user.mobile_number} />
+            </span>
           </div>
           <div className="detail-row">
             <span className="detail-label">Email</span>

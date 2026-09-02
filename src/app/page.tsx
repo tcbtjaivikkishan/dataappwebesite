@@ -1,4 +1,5 @@
 import { getDb } from "@/lib/mongodb";
+import CopyablePhone from "@/app/components/CopyablePhone";
 
 export const dynamic = "force-dynamic";
 
@@ -290,7 +291,9 @@ export default async function DashboardPage() {
                       </a>
                     )}
                   </td>
-                  <td className="phone-text">{u.mobile_number}</td>
+                  <td className="phone-text">
+                    <CopyablePhone phone={u.mobile_number} />
+                  </td>
                   <td>{u.email || <span style={{ color: "var(--text-muted)" }}>—</span>}</td>
                   <td>
                     {u.isContacted ? (
