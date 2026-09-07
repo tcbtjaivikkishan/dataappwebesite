@@ -1,5 +1,4 @@
 import { getDb } from "@/lib/mongodb";
-import { ObjectId } from "mongodb";
 import CopyablePhone from "@/app/components/CopyablePhone";
 
 export const dynamic = "force-dynamic";
@@ -353,12 +352,12 @@ export default async function DashboardPage() {
         </table>
       </div>
 
-      {/* ── All Orders ──────────────────────────────────── */}
+      {/* ── Recent Orders ──────────────────────────────────── */}
       <div className="table-container">
         <div className="table-header">
           <div>
-            <span className="table-title">All Orders</span>
-            <span className="table-count">{recentOrders.length} total</span>
+            <span className="table-title">Recent Orders</span>
+            <span className="table-count">Last {recentOrders.length} of {totalOrders.toLocaleString()}</span>
           </div>
         </div>
         <table>
@@ -374,7 +373,7 @@ export default async function DashboardPage() {
           </thead>
           <tbody>
             {recentOrders.length === 0 ? (
-              <tr><td colSpan={7} className="empty-state"><div className="empty-state-text">No orders yet</div></td></tr>
+              <tr><td colSpan={6} className="empty-state"><div className="empty-state-text">No orders yet</div></td></tr>
             ) : (
               recentOrders.map((o: any) => (
                 <tr key={o._id.toString()}>
