@@ -1,4 +1,5 @@
 import { getDb } from "@/lib/mongodb";
+import { ObjectId } from "mongodb";
 import CopyablePhone from "@/app/components/CopyablePhone";
 
 export const dynamic = "force-dynamic";
@@ -98,19 +99,26 @@ export default async function DashboardPage() {
 
   const contactedCol = db.collection("user_is_conttacted");
   const contactedDocs = await contactedCol.find({}).toArray();
-  const contactedMap = new Map<string, boolean>();
+  const contactedMap = new Map<string, { isContacted: boolean; contactedBy?: string }>();
   for (const doc of contactedDocs) {
     const uid = (doc.userId || doc.userid || doc._id)?.toString();
     const isC = Boolean(doc.isContacted ?? doc.iscontacted ?? false);
     if (uid && isC) {
-      contactedMap.set(uid, true);
+      contactedMap.set(uid, { isContacted: true, contactedBy: doc.contactedBy });
     }
   }
 
   const ASSIGNEES = ["shivani", "ritika", "siksha"] as const;
-  mergedRecent.forEach((u: any, i) => {
-    u.assignee = ASSIGNEES[i % 3];
-    u.isContacted = contactedMap.get(u._id) || false;
+  let rrIdx = 0;
+  mergedRecent.forEach((u: any) => {
+    const cInfo = contactedMap.get(u._id);
+    u.isContacted = cInfo?.isContacted || false;
+    if (cInfo?.contactedBy && ASSIGNEES.includes(cInfo.contactedBy as any)) {
+      u.assignee = cInfo.contactedBy;
+    } else {
+      u.assignee = ASSIGNEES[rrIdx % 3];
+      rrIdx++;
+    }
   });
 
   // ── Registered Users count (unique, not in app) ────────────
@@ -143,7 +151,7 @@ export default async function DashboardPage() {
     }
   }
 
-  // ── Recent Orders ─────────────────────────────────────────────
+  // ── All Orders ─────────────────────────────────────────────
   const recentOrders = await ordersCol
     .find({})
     .sort({ createdAt: -1 })
@@ -264,93 +272,93 @@ export default async function DashboardPage() {
           </a>
         </div>
         <table>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>Phone</th>
-                <th>Email</th>
-                <th>Contact</th>
-                <th>Source</th>
-                <th>Assigned</th>
-                <th>Status</th>
-                <th>Zoho</th>
-                <th>Joined</th>
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Phone</th>
+
+              <th>Contact</th>
+              <th>Source</th>
+              <th>Assigned</th>
+              <th>Status</th>
+              <th>Zoho</th>
+              <th>Joined</th>
+            </tr>
+          </thead>
+          <tbody>
+            {mergedRecent.map((u: any) => (
+              <tr key={u._id} className="clickable-row" onClick={undefined}>
+                <td>
+                  {u.source === "app" ? (
+                    <a href={`/users/${u._id}`} style={{ fontWeight: 600 }}>
+                      {u.name || <span style={{ color: "var(--text-muted)" }}>—</span>}
+                    </a>
+                  ) : (
+                    <a href={`/users/${u._id}`} style={{ fontWeight: 600 }}>
+                      {u.name || <span style={{ color: "var(--text-muted)" }}>—</span>}
+                    </a>
+                  )}
+                </td>
+                <td className="phone-text">
+                  <CopyablePhone phone={u.mobile_number} />
+                </td>
+
+                <td>
+                  {u.isContacted ? (
+                    <span className="badge verified">✓ Contacted</span>
+                  ) : (
+                    <span className="badge not-synced">⏳ Pending</span>
+                  )}
+                </td>
+                <td>
+                  {u.source === "registered" ? (
+                    <span className="badge registered-source" title={u.state ? `State: ${u.state}` : undefined}>⚡ Flash</span>
+                  ) : (
+                    <span className="badge app-source">📱 App</span>
+                  )}
+                </td>
+                <td>
+                  {u.assignee ? (
+                    <a
+                      href={`/${u.assignee}`}
+                      className={`badge team-${u.assignee}`}
+                      style={{ textDecoration: "none" }}
+                    >
+                      {u.assignee.charAt(0).toUpperCase() + u.assignee.slice(1)}
+                    </a>
+                  ) : (
+                    <span style={{ color: "var(--text-muted)" }}>—</span>
+                  )}
+                </td>
+                <td>
+                  {u.name ? (
+                    <span className="badge verified">● Verified</span>
+                  ) : (
+                    <span className="badge ghost">● Ghost</span>
+                  )}
+                </td>
+                <td>
+                  {u.zoho_contact_id ? (
+                    <span className="badge synced">✓ Synced</span>
+                  ) : (
+                    <span className="badge not-synced">Not synced</span>
+                  )}
+                </td>
+                <td style={{ color: "var(--text-secondary)" }}>
+                  {u.created_at ? timeAgo(new Date(u.created_at)) : "—"}
+                </td>
               </tr>
-            </thead>
-            <tbody>
-              {mergedRecent.map((u: any) => (
-                <tr key={u._id} className="clickable-row" onClick={undefined}>
-                  <td>
-                    {u.source === "app" ? (
-                      <a href={`/users/${u._id}`} style={{ fontWeight: 600 }}>
-                        {u.name || <span style={{ color: "var(--text-muted)" }}>—</span>}
-                      </a>
-                    ) : (
-                      <a href={`/users/${u._id}`} style={{ fontWeight: 600 }}>
-                        {u.name || <span style={{ color: "var(--text-muted)" }}>—</span>}
-                      </a>
-                    )}
-                  </td>
-                  <td className="phone-text">
-                    <CopyablePhone phone={u.mobile_number} />
-                  </td>
-                  <td>{u.email || <span style={{ color: "var(--text-muted)" }}>—</span>}</td>
-                  <td>
-                    {u.isContacted ? (
-                      <span className="badge verified">✓ Contacted</span>
-                    ) : (
-                      <span className="badge not-synced">⏳ Pending</span>
-                    )}
-                  </td>
-                  <td>
-                    {u.source === "registered" ? (
-                      <span className="badge registered-source" title={u.state ? `State: ${u.state}` : undefined}>⚡ Flash</span>
-                    ) : (
-                      <span className="badge app-source">📱 App</span>
-                    )}
-                  </td>
-                  <td>
-                    {u.assignee ? (
-                      <a
-                        href={`/${u.assignee}`}
-                        className={`badge team-${u.assignee}`}
-                        style={{ textDecoration: "none" }}
-                      >
-                        {u.assignee.charAt(0).toUpperCase() + u.assignee.slice(1)}
-                      </a>
-                    ) : (
-                      <span style={{ color: "var(--text-muted)" }}>—</span>
-                    )}
-                  </td>
-                  <td>
-                    {u.name ? (
-                      <span className="badge verified">● Verified</span>
-                    ) : (
-                      <span className="badge ghost">● Ghost</span>
-                    )}
-                  </td>
-                  <td>
-                    {u.zoho_contact_id ? (
-                      <span className="badge synced">✓ Synced</span>
-                    ) : (
-                      <span className="badge not-synced">Not synced</span>
-                    )}
-                  </td>
-                  <td style={{ color: "var(--text-secondary)" }}>
-                    {u.created_at ? timeAgo(new Date(u.created_at)) : "—"}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
+            ))}
+          </tbody>
         </table>
       </div>
 
-      {/* ── Recent Orders ──────────────────────────────────── */}
+      {/* ── All Orders ──────────────────────────────────── */}
       <div className="table-container">
         <div className="table-header">
           <div>
-            <span className="table-title">Recent Orders</span>
-            <span className="table-count">Last 10</span>
+            <span className="table-title">All Orders</span>
+            <span className="table-count">{recentOrders.length} total</span>
           </div>
         </div>
         <table>
@@ -366,7 +374,7 @@ export default async function DashboardPage() {
           </thead>
           <tbody>
             {recentOrders.length === 0 ? (
-              <tr><td colSpan={6} className="empty-state"><div className="empty-state-text">No orders yet</div></td></tr>
+              <tr><td colSpan={7} className="empty-state"><div className="empty-state-text">No orders yet</div></td></tr>
             ) : (
               recentOrders.map((o: any) => (
                 <tr key={o._id.toString()}>

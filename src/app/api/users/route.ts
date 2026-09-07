@@ -125,9 +125,15 @@ export async function GET(req: NextRequest) {
     return db - da;
   });
 
-  // 6. Assign every user equally to shivani, ritika, siksha in round-robin order
-  merged.forEach((u, index) => {
-    u.assignee = ASSIGNEES[index % 3];
+  // 6. Assign contacted users to their contactor; round-robin only uncontacted users
+  let rrIndex = 0;
+  merged.forEach((u) => {
+    if (u.contactedBy && ASSIGNEES.includes(u.contactedBy as any)) {
+      u.assignee = u.contactedBy;
+    } else {
+      u.assignee = ASSIGNEES[rrIndex % 3];
+      rrIndex++;
+    }
   });
 
   // 7. Calculate overall stats before filtering
