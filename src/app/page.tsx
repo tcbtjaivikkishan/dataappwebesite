@@ -1,5 +1,6 @@
 import { getDb } from "@/lib/mongodb";
 import CopyablePhone from "@/app/components/CopyablePhone";
+import RemarkCell from "@/app/components/RemarkCell";
 
 export const dynamic = "force-dynamic";
 
@@ -98,12 +99,16 @@ export default async function DashboardPage() {
 
   const contactedCol = db.collection("user_is_conttacted");
   const contactedDocs = await contactedCol.find({}).toArray();
-  const contactedMap = new Map<string, { isContacted: boolean; contactedBy?: string }>();
+  const contactedMap = new Map<string, { isContacted: boolean; contactedBy?: string; remark?: string }>();
   for (const doc of contactedDocs) {
     const uid = (doc.userId || doc.userid || doc._id)?.toString();
     const isC = Boolean(doc.isContacted ?? doc.iscontacted ?? false);
-    if (uid && isC) {
-      contactedMap.set(uid, { isContacted: true, contactedBy: doc.contactedBy });
+    if (uid) {
+      contactedMap.set(uid, {
+        isContacted: isC,
+        contactedBy: doc.contactedBy,
+        remark: doc.remark,
+      });
     }
   }
 
@@ -112,6 +117,7 @@ export default async function DashboardPage() {
   mergedRecent.forEach((u: any) => {
     const cInfo = contactedMap.get(u._id);
     u.isContacted = cInfo?.isContacted || false;
+    u.remark = cInfo?.remark;
     if (cInfo?.contactedBy && ASSIGNEES.includes(cInfo.contactedBy as any)) {
       u.assignee = cInfo.contactedBy;
     } else {
@@ -261,6 +267,7 @@ export default async function DashboardPage() {
               <th>Name</th>
               <th>Phone</th>
               <th>Contact</th>
+              <th>Remark</th>
               <th>Assigned</th>
               <th>Joined</th>
             </tr>
@@ -289,6 +296,13 @@ export default async function DashboardPage() {
                   ) : (
                     <span className="badge not-synced">⏳ Pending</span>
                   )}
+                </td>
+                <td>
+                  <RemarkCell
+                    userId={u._id}
+                    initialRemark={u.remark}
+                    assignee={u.assignee}
+                  />
                 </td>
                 <td>
                   {u.assignee ? (
