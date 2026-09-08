@@ -2,6 +2,7 @@ import { getDb } from "@/lib/mongodb";
 import { ObjectId } from "mongodb";
 import Link from "next/link";
 import CopyablePhone from "@/app/components/CopyablePhone";
+import RemarkCell from "@/app/components/RemarkCell";
 
 export const dynamic = "force-dynamic";
 
@@ -149,6 +150,12 @@ export default async function UserDetailPage({ params }: { params: Promise<{ id:
           <div className="detail-row">
             <span className="detail-label">Email</span>
             <span className="detail-value">{user.email || "—"}</span>
+          </div>
+          <div className="detail-row">
+            <span className="detail-label">Lead Remark</span>
+            <span className="detail-value">
+              <RemarkCell userId={id} initialRemark={contactedDoc?.remark || ""} />
+            </span>
           </div>
           <div className="detail-row">
             <span className="detail-label">Active</span>

@@ -4,6 +4,7 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { useEffect, useState, useCallback, Suspense } from "react";
 import CopyablePhone from "@/app/components/CopyablePhone";
+import RemarkCell from "@/app/components/RemarkCell";
 
 interface UserRow {
   _id: string;
@@ -17,10 +18,11 @@ interface UserRow {
   orderCount?: number;
   source?: "app" | "registered";
   state?: string;
-  assignee?: "shivani" | "ritika" | "siksha";
+  assignee?: "shivani" | "ritika" | "siksha" | "riya";
   isContacted?: boolean;
   contactedBy?: string;
   contactedAt?: string;
+  remark?: string;
 }
 
 function UsersContent() {
@@ -144,11 +146,7 @@ function UsersContent() {
             { key: "all", label: "All" },
             { key: "not-contacted", label: "⏳ Pending Call" },
             { key: "contacted", label: "✅ Contacted" },
-            { key: "verified", label: "Verified" },
-            { key: "ghost", label: "Ghost" },
             { key: "has-orders", label: "Has Orders" },
-            { key: "zoho-synced", label: "Zoho Synced" },
-            { key: "registered-only", label: "Flash Only" },
           ].map((f) => (
             <button
               key={f.key}
@@ -174,21 +172,17 @@ function UsersContent() {
                 <tr>
                   <th>Name</th>
                   <th>Phone</th>
-                  <th>Email</th>
                   <th>Contact</th>
-                  <th>Source</th>
+                  <th>Remark</th>
                   <th>Assigned</th>
-                  <th>Status</th>
                   <th>Orders</th>
-                  <th>Zoho</th>
-                  <th>Last Login</th>
                   <th>Joined</th>
                 </tr>
               </thead>
               <tbody>
                 {users.length === 0 ? (
                   <tr>
-                    <td colSpan={11}>
+                    <td colSpan={7}>
                       <div className="empty-state">
                         <div className="empty-state-icon">🔍</div>
                         <div className="empty-state-text">No users found</div>
@@ -208,7 +202,6 @@ function UsersContent() {
                       <td className="phone-text">
                         <CopyablePhone phone={u.mobile_number} />
                       </td>
-                      <td>{u.email || <span style={{ color: "var(--text-muted)" }}>—</span>}</td>
                       <td>
                         <button
                           type="button"
@@ -231,13 +224,18 @@ function UsersContent() {
                         </button>
                       </td>
                       <td>
-                        {u.source === "registered" ? (
-                          <span className="badge registered-source" title={u.state ? `State: ${u.state}` : undefined}>
-                            ⚡ Flash
-                          </span>
-                        ) : (
-                          <span className="badge app-source">📱 App</span>
-                        )}
+                        <RemarkCell
+                          userId={u._id}
+                          initialRemark={u.remark}
+                          assignee={u.assignee}
+                          onSaved={(rem) => {
+                            setUsers((prev) =>
+                              prev.map((item) =>
+                                item._id === u._id ? { ...item, remark: rem } : item
+                              )
+                            );
+                          }}
+                        />
                       </td>
                       <td>
                         {u.assignee ? (
@@ -253,24 +251,7 @@ function UsersContent() {
                           <span style={{ color: "var(--text-muted)" }}>—</span>
                         )}
                       </td>
-                      <td>
-                        {u.name ? (
-                          <span className="badge verified">● Verified</span>
-                        ) : (
-                          <span className="badge ghost">● Ghost</span>
-                        )}
-                      </td>
                       <td style={{ fontWeight: 600 }}>{u.orderCount || 0}</td>
-                      <td>
-                        {u.zoho_contact_id ? (
-                          <span className="badge synced">✓ Synced</span>
-                        ) : (
-                          <span className="badge not-synced">—</span>
-                        )}
-                      </td>
-                      <td style={{ color: "var(--text-secondary)" }}>
-                        {timeAgo(u.last_login_at)}
-                      </td>
                       <td style={{ color: "var(--text-secondary)" }}>
                         {timeAgo(u.created_at)}
                       </td>

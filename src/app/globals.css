@@ -420,6 +420,11 @@ tr:hover td {
   color: #56e0a0;
 }
 
+.badge.team-riya {
+  background: rgba(245, 158, 11, 0.12);
+  color: #f59e0b;
+}
+
 /* ─── Contact Toggle Button & Progress Card ───────────────────── */
 .contact-toggle-btn {
   display: inline-flex;
@@ -462,6 +467,176 @@ tr:hover td {
   background: rgba(255, 255, 255, 0.08);
   color: var(--text-primary);
   border-color: var(--text-muted);
+}
+
+/* ─── Remark Cell ────────────────────────────────────────────── */
+.remark-cell {
+  position: relative;
+  min-width: 140px;
+  max-width: 220px;
+}
+
+.remark-display {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid transparent;
+  transition: all 0.15s ease;
+  max-width: 100%;
+}
+
+.remark-display:hover {
+  background: var(--bg-card-hover);
+  border-color: var(--border-light);
+}
+
+.remark-text {
+  font-size: 12px;
+  color: var(--text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 150px;
+}
+
+.remark-edit-icon {
+  opacity: 0.4;
+  font-size: 11px;
+  color: var(--text-muted);
+  transition: opacity 0.15s ease;
+  flex-shrink: 0;
+}
+
+.remark-display:hover .remark-edit-icon {
+  opacity: 1;
+  color: var(--accent);
+}
+
+.remark-empty-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 11.5px;
+  color: var(--text-muted);
+  background: transparent;
+  border: 1px dashed var(--border);
+  cursor: pointer;
+  transition: all 0.15s ease;
+  font-family: inherit;
+}
+
+.remark-empty-btn:hover {
+  color: var(--accent);
+  border-color: var(--accent);
+  background: var(--accent-subtle);
+}
+
+.remark-edit-container {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  padding: 8px;
+  background: #181824;
+  border: 1px solid var(--accent);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+  min-width: 210px;
+  position: relative;
+  z-index: 20;
+}
+
+.remark-input-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.remark-input {
+  flex: 1;
+  padding: 5px 8px;
+  font-size: 12px;
+  border-radius: 6px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  color: var(--text-primary);
+  outline: none;
+  font-family: inherit;
+}
+
+.remark-input:focus {
+  border-color: var(--accent);
+}
+
+.remark-btn-save {
+  padding: 4px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: 6px;
+  background: var(--accent);
+  color: #fff;
+  border: none;
+  cursor: pointer;
+  transition: opacity 0.15s ease;
+  white-space: nowrap;
+}
+
+.remark-btn-save:hover:not(:disabled) {
+  opacity: 0.9;
+}
+
+.remark-btn-cancel {
+  padding: 4px 6px;
+  font-size: 11px;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--text-muted);
+  border: 1px solid var(--border);
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.remark-btn-cancel:hover {
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+}
+
+.remark-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.remark-chip {
+  padding: 2px 7px;
+  font-size: 10px;
+  font-weight: 500;
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.05);
+  border: 1px solid var(--border-light);
+  color: var(--text-secondary);
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.remark-chip:hover {
+  background: var(--accent-subtle);
+  color: var(--accent);
+  border-color: var(--accent);
+}
+
+.remark-saved-badge {
+  font-size: 11px;
+  color: var(--green-text);
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  animation: fadeIn 0.15s ease;
 }
 
 .progress-card {

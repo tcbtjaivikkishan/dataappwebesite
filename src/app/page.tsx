@@ -107,7 +107,7 @@ export default async function DashboardPage() {
     }
   }
 
-  const ASSIGNEES = ["shivani", "ritika", "siksha"] as const;
+  const ASSIGNEES = ["shivani", "ritika", "siksha", "riya"] as const;
   let rrIdx = 0;
   mergedRecent.forEach((u: any) => {
     const cInfo = contactedMap.get(u._id);
@@ -115,7 +115,7 @@ export default async function DashboardPage() {
     if (cInfo?.contactedBy && ASSIGNEES.includes(cInfo.contactedBy as any)) {
       u.assignee = cInfo.contactedBy;
     } else {
-      u.assignee = ASSIGNEES[rrIdx % 3];
+      u.assignee = ASSIGNEES[rrIdx % ASSIGNEES.length];
       rrIdx++;
     }
   });
@@ -142,7 +142,7 @@ export default async function DashboardPage() {
 
   // Contacted statistics
   const totalContacted = contactedDocs.filter((d: any) => Boolean(d.isContacted ?? d.iscontacted)).length;
-  const contactedByAssignee: Record<string, number> = { shivani: 0, ritika: 0, siksha: 0 };
+  const contactedByAssignee: Record<string, number> = { shivani: 0, ritika: 0, siksha: 0, riya: 0 };
   for (const doc of contactedDocs) {
     const isC = Boolean(doc.isContacted ?? doc.iscontacted ?? false);
     if (isC && doc.contactedBy && contactedByAssignee[doc.contactedBy] !== undefined) {
@@ -213,49 +213,34 @@ export default async function DashboardPage() {
         <div className="table-header" style={{ marginBottom: 12 }}>
           <div>
             <span className="table-title">Team User Allocation & Contact Progress</span>
-            <span className="table-count">Divided equally ({Math.round(grandTotal / 3).toLocaleString()} each)</span>
+            <span className="table-count">Divided equally ({Math.round(grandTotal / 4).toLocaleString()} each)</span>
           </div>
         </div>
         <div className="stats-grid" style={{ gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))" }}>
-          <a href="/shivani" style={{ textDecoration: "none", color: "inherit" }}>
-            <div className="stat-card" style={{ borderLeft: "4px solid #e056a0" }}>
-              <div className="stat-icon" style={{ background: "rgba(224, 86, 160, 0.15)", color: "#e056a0" }}>👤</div>
-              <div className="stat-value">{Math.ceil(grandTotal / 3).toLocaleString()}</div>
-              <div className="stat-label" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span>Shivani</span>
-                <span style={{ color: "#e056a0", fontWeight: 600 }}>View Users →</span>
-              </div>
-              <div style={{ marginTop: 8, fontSize: 12, color: "var(--green-text)", fontWeight: 500 }}>
-                ✅ {contactedByAssignee.shivani} contacted ({Math.round((contactedByAssignee.shivani / Math.ceil(grandTotal / 3)) * 100)}%)
-              </div>
-            </div>
-          </a>
-          <a href="/ritika" style={{ textDecoration: "none", color: "inherit" }}>
-            <div className="stat-card" style={{ borderLeft: "4px solid #56b4e0" }}>
-              <div className="stat-icon" style={{ background: "rgba(86, 180, 224, 0.15)", color: "#56b4e0" }}>👤</div>
-              <div className="stat-value">{Math.floor((grandTotal + 1) / 3).toLocaleString()}</div>
-              <div className="stat-label" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span>Ritika</span>
-                <span style={{ color: "#56b4e0", fontWeight: 600 }}>View Users →</span>
-              </div>
-              <div style={{ marginTop: 8, fontSize: 12, color: "var(--green-text)", fontWeight: 500 }}>
-                ✅ {contactedByAssignee.ritika} contacted ({Math.round((contactedByAssignee.ritika / Math.floor((grandTotal + 1) / 3)) * 100)}%)
-              </div>
-            </div>
-          </a>
-          <a href="/siksha" style={{ textDecoration: "none", color: "inherit" }}>
-            <div className="stat-card" style={{ borderLeft: "4px solid #56e0a0" }}>
-              <div className="stat-icon" style={{ background: "rgba(86, 224, 160, 0.15)", color: "#56e0a0" }}>👤</div>
-              <div className="stat-value">{Math.floor(grandTotal / 3).toLocaleString()}</div>
-              <div className="stat-label" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
-                <span>Siksha</span>
-                <span style={{ color: "#56e0a0", fontWeight: 600 }}>View Users →</span>
-              </div>
-              <div style={{ marginTop: 8, fontSize: 12, color: "var(--green-text)", fontWeight: 500 }}>
-                ✅ {contactedByAssignee.siksha} contacted ({Math.round((contactedByAssignee.siksha / Math.floor(grandTotal / 3)) * 100)}%)
-              </div>
-            </div>
-          </a>
+          {[
+            { key: "shivani", name: "Shivani", color: "#e056a0", share: Math.floor(grandTotal / 4) + (grandTotal % 4 > 0 ? 1 : 0) },
+            { key: "ritika", name: "Ritika", color: "#56b4e0", share: Math.floor(grandTotal / 4) + (grandTotal % 4 > 1 ? 1 : 0) },
+            { key: "siksha", name: "Siksha", color: "#56e0a0", share: Math.floor(grandTotal / 4) + (grandTotal % 4 > 2 ? 1 : 0) },
+            { key: "riya", name: "Riya", color: "#f59e0b", share: Math.floor(grandTotal / 4) },
+          ].map((m) => {
+            const contacted = contactedByAssignee[m.key] || 0;
+            const pct = m.share > 0 ? Math.round((contacted / m.share) * 100) : 0;
+            return (
+              <a key={m.key} href={`/${m.key}`} style={{ textDecoration: "none", color: "inherit" }}>
+                <div className="stat-card" style={{ borderLeft: `4px solid ${m.color}` }}>
+                  <div className="stat-icon" style={{ background: `${m.color}26`, color: m.color }}>👤</div>
+                  <div className="stat-value">{m.share.toLocaleString()}</div>
+                  <div className="stat-label" style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
+                    <span>{m.name}</span>
+                    <span style={{ color: m.color, fontWeight: 600 }}>View Users →</span>
+                  </div>
+                  <div style={{ marginTop: 8, fontSize: 12, color: "var(--green-text)", fontWeight: 500 }}>
+                    ✅ {contacted} contacted ({pct}%)
+                  </div>
+                </div>
+              </a>
+            );
+          })}
         </div>
       </div>
 
@@ -275,12 +260,8 @@ export default async function DashboardPage() {
             <tr>
               <th>Name</th>
               <th>Phone</th>
-
               <th>Contact</th>
-              <th>Source</th>
               <th>Assigned</th>
-              <th>Status</th>
-              <th>Zoho</th>
               <th>Joined</th>
             </tr>
           </thead>
@@ -310,13 +291,6 @@ export default async function DashboardPage() {
                   )}
                 </td>
                 <td>
-                  {u.source === "registered" ? (
-                    <span className="badge registered-source" title={u.state ? `State: ${u.state}` : undefined}>⚡ Flash</span>
-                  ) : (
-                    <span className="badge app-source">📱 App</span>
-                  )}
-                </td>
-                <td>
                   {u.assignee ? (
                     <a
                       href={`/${u.assignee}`}
@@ -327,20 +301,6 @@ export default async function DashboardPage() {
                     </a>
                   ) : (
                     <span style={{ color: "var(--text-muted)" }}>—</span>
-                  )}
-                </td>
-                <td>
-                  {u.name ? (
-                    <span className="badge verified">● Verified</span>
-                  ) : (
-                    <span className="badge ghost">● Ghost</span>
-                  )}
-                </td>
-                <td>
-                  {u.zoho_contact_id ? (
-                    <span className="badge synced">✓ Synced</span>
-                  ) : (
-                    <span className="badge not-synced">Not synced</span>
                   )}
                 </td>
                 <td style={{ color: "var(--text-secondary)" }}>

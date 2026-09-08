@@ -132,6 +132,12 @@ export default function Sidebar() {
                 Siksha
               </Link>
             </li>
+            <li>
+              <Link href="/riya" className={`sidebar-link ${isActive("/riya") ? "active" : ""}`}>
+                <span className="team-dot" style={{ background: "#f59e0b" }} />
+                Riya
+              </Link>
+            </li>
           </ul>
         </nav>
       </aside>

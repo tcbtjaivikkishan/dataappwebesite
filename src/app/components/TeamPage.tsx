@@ -3,6 +3,7 @@
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useState, useCallback, Suspense } from "react";
 import CopyablePhone from "@/app/components/CopyablePhone";
+import RemarkCell from "@/app/components/RemarkCell";
 
 interface UserRow {
   _id: string;
@@ -19,6 +20,7 @@ interface UserRow {
   isContacted?: boolean;
   contactedBy?: string;
   contactedAt?: string;
+  remark?: string;
 }
 
 interface TeamStats {
@@ -31,6 +33,7 @@ const TEAM_COLORS: Record<string, string> = {
   shivani: "#e056a0",
   ritika: "#56b4e0",
   siksha: "#56e0a0",
+  riya: "#f59e0b",
 };
 
 function TeamContent({ assignee }: { assignee: string }) {
@@ -240,11 +243,7 @@ function TeamContent({ assignee }: { assignee: string }) {
             { key: "all", label: "All" },
             { key: "not-contacted", label: "⏳ Pending Call" },
             { key: "contacted", label: "✅ Contacted" },
-            { key: "verified", label: "Verified" },
-            { key: "ghost", label: "Ghost" },
             { key: "has-orders", label: "Has Orders" },
-            { key: "zoho-synced", label: "Zoho Synced" },
-            { key: "registered-only", label: "Flash Only" },
           ].map((f) => (
             <button
               key={f.key}
@@ -270,20 +269,16 @@ function TeamContent({ assignee }: { assignee: string }) {
                 <tr>
                   <th>Name</th>
                   <th>Phone</th>
-                  <th>Email</th>
                   <th>Contact Status</th>
-                  <th>Source</th>
-                  <th>Status</th>
+                  <th>Remark</th>
                   <th>Orders</th>
-                  <th>Zoho</th>
-                  <th>Last Login</th>
                   <th>Joined</th>
                 </tr>
               </thead>
               <tbody>
                 {users.length === 0 ? (
                   <tr>
-                    <td colSpan={10}>
+                    <td colSpan={6}>
                       <div className="empty-state">
                         <div className="empty-state-icon">🔍</div>
                         <div className="empty-state-text">No users found</div>
@@ -303,7 +298,6 @@ function TeamContent({ assignee }: { assignee: string }) {
                       <td className="phone-text">
                         <CopyablePhone phone={u.mobile_number} />
                       </td>
-                      <td>{u.email || <span style={{ color: "var(--text-muted)" }}>—</span>}</td>
                       <td>
                         <button
                           type="button"
@@ -326,32 +320,20 @@ function TeamContent({ assignee }: { assignee: string }) {
                         </button>
                       </td>
                       <td>
-                        {u.source === "registered" ? (
-                          <span className="badge registered-source" title={u.state ? `State: ${u.state}` : undefined}>
-                            ⚡ Flash
-                          </span>
-                        ) : (
-                          <span className="badge app-source">📱 App</span>
-                        )}
-                      </td>
-                      <td>
-                        {u.name ? (
-                          <span className="badge verified">● Verified</span>
-                        ) : (
-                          <span className="badge ghost">● Ghost</span>
-                        )}
+                        <RemarkCell
+                          userId={u._id}
+                          initialRemark={u.remark}
+                          assignee={assignee}
+                          onSaved={(rem) => {
+                            setUsers((prev) =>
+                              prev.map((item) =>
+                                item._id === u._id ? { ...item, remark: rem } : item
+                              )
+                            );
+                          }}
+                        />
                       </td>
                       <td style={{ fontWeight: 600 }}>{u.orderCount || 0}</td>
-                      <td>
-                        {u.zoho_contact_id ? (
-                          <span className="badge synced">✓ Synced</span>
-                        ) : (
-                          <span className="badge not-synced">—</span>
-                        )}
-                      </td>
-                      <td style={{ color: "var(--text-secondary)" }}>
-                        {timeAgo(u.last_login_at)}
-                      </td>
                       <td style={{ color: "var(--text-secondary)" }}>
                         {timeAgo(u.created_at)}
                       </td>

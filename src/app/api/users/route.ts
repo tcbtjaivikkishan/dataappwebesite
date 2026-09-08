@@ -10,7 +10,7 @@ function normalizePhone(phone?: string): string {
   return digits.length > 10 ? digits.slice(-10) : digits;
 }
 
-const ASSIGNEES = ["shivani", "ritika", "siksha"] as const;
+const ASSIGNEES = ["shivani", "ritika", "siksha", "riya"] as const;
 
 export async function GET(req: NextRequest) {
   const { searchParams } = req.nextUrl;
@@ -41,7 +41,7 @@ export async function GET(req: NextRequest) {
   // Build contacted map (supports userId, userid, and _id)
   const contactedMap = new Map<
     string,
-    { isContacted: boolean; contactedBy?: string; updatedAt?: string }
+    { isContacted: boolean; contactedBy?: string; updatedAt?: string; remark?: string }
   >();
   for (const doc of contactedDocs) {
     const uid = (doc.userId || doc.userid || doc._id)?.toString();
@@ -51,6 +51,7 @@ export async function GET(req: NextRequest) {
         isContacted: isC,
         contactedBy: doc.contactedBy || doc.assignee,
         updatedAt: doc.updatedAt ? new Date(doc.updatedAt).toISOString() : undefined,
+        remark: doc.remark || undefined,
       });
     }
   }
@@ -86,6 +87,7 @@ export async function GET(req: NextRequest) {
       isContacted: cInfo ? cInfo.isContacted : false,
       contactedBy: cInfo?.contactedBy,
       contactedAt: cInfo?.updatedAt,
+      remark: cInfo?.remark,
     };
   });
 
@@ -115,6 +117,7 @@ export async function GET(req: NextRequest) {
       isContacted: cInfo ? cInfo.isContacted : false,
       contactedBy: cInfo?.contactedBy,
       contactedAt: cInfo?.updatedAt,
+      remark: cInfo?.remark,
     });
   }
 
@@ -131,7 +134,7 @@ export async function GET(req: NextRequest) {
     if (u.contactedBy && ASSIGNEES.includes(u.contactedBy as any)) {
       u.assignee = u.contactedBy;
     } else {
-      u.assignee = ASSIGNEES[rrIndex % 3];
+      u.assignee = ASSIGNEES[rrIndex % ASSIGNEES.length];
       rrIndex++;
     }
   });
@@ -152,6 +155,10 @@ export async function GET(req: NextRequest) {
       siksha: {
         total: merged.filter((u) => u.assignee === "siksha").length,
         contacted: merged.filter((u) => u.assignee === "siksha" && u.isContacted).length,
+      },
+      riya: {
+        total: merged.filter((u) => u.assignee === "riya").length,
+        contacted: merged.filter((u) => u.assignee === "riya" && u.isContacted).length,
       },
     },
   };
@@ -185,7 +192,8 @@ export async function GET(req: NextRequest) {
       const nameMatch = u.name && u.name.toLowerCase().includes(q);
       const phoneMatch = u.mobile_number && u.mobile_number.includes(q);
       const emailMatch = u.email && u.email.toLowerCase().includes(q);
-      return nameMatch || phoneMatch || emailMatch;
+      const remarkMatch = u.remark && u.remark.toLowerCase().includes(q);
+      return nameMatch || phoneMatch || emailMatch || remarkMatch;
     });
   }
 

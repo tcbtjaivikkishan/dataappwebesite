@@ -7,7 +7,7 @@ export const dynamic = "force-dynamic";
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json();
-    const { userId, isContacted, assignee } = body;
+    const { userId, isContacted, assignee, remark } = body;
 
     if (!userId) {
       return NextResponse.json({ error: "userId is required" }, { status: 400 });
@@ -16,7 +16,6 @@ export async function POST(req: NextRequest) {
     const db = await getDb();
     const contactedCol = db.collection("user_is_conttacted");
 
-    const isContactedBool = Boolean(isContacted);
     const now = new Date();
 
     // Support both string and ObjectId match
@@ -31,17 +30,30 @@ export async function POST(req: NextRequest) {
       // Not a valid ObjectId, string query is sufficient
     }
 
-    const updateResult = await contactedCol.updateOne(
+    const setFields: Record<string, any> = {
+      userId: userId.toString(),
+      userid: userId.toString(),
+      updatedAt: now,
+    };
+
+    if (isContacted !== undefined) {
+      const isContactedBool = Boolean(isContacted);
+      setFields.isContacted = isContactedBool;
+      setFields.iscontacted = isContactedBool;
+    }
+
+    if (assignee !== undefined) {
+      setFields.contactedBy = assignee;
+    }
+
+    if (remark !== undefined) {
+      setFields.remark = typeof remark === "string" ? remark.trim() : "";
+    }
+
+    await contactedCol.updateOne(
       { $or: orConditions },
       {
-        $set: {
-          userId: userId.toString(),
-          userid: userId.toString(),
-          isContacted: isContactedBool,
-          iscontacted: isContactedBool,
-          contactedBy: assignee || undefined,
-          updatedAt: now,
-        },
+        $set: setFields,
         $setOnInsert: {
           createdAt: now,
         },
@@ -52,8 +64,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({
       success: true,
       userId: userId.toString(),
-      isContacted: isContactedBool,
-      contactedBy: assignee,
+      ...(isContacted !== undefined ? { isContacted: Boolean(isContacted) } : {}),
+      ...(assignee !== undefined ? { contactedBy: assignee } : {}),
+      ...(remark !== undefined ? { remark: typeof remark === "string" ? remark.trim() : "" } : {}),
       updatedAt: now.toISOString(),
     });
   } catch (err: any) {
